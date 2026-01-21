@@ -20,7 +20,6 @@ public class MyHttpClient {
     private final String uri = "https://jsonplaceholder.typicode.com/users";
     private HttpResponse<String> response;
 
-
     private void methods(String uri ,String method, HttpRequest.BodyPublisher body) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
                 .header("Content-Type", "application/json")
@@ -72,6 +71,10 @@ public class MyHttpClient {
     }
 
     //Get methods
+    private void get(String uri) {
+        String method = "GET";
+        methods(uri, method, HttpRequest.BodyPublishers.noBody());
+    }
     public void getAllUsers() {
         get(uri);
     }
@@ -84,15 +87,21 @@ public class MyHttpClient {
     public void getUncompleted(int id) {
         get(uri + "/" + id + "/todos?completed=false");
     }
-    public  void getUsersPosts(int id) {
+    public void getLastPostComments(int id) {
+        getUsersPosts(id);
+
+        int lastPostId = getLastPostId();
+        String uri = "https://jsonplaceholder.typicode.com/posts/";
+
+        get(uri + lastPostId + "/comments");
+
+        writeInJson("src/main/resources/user-"+ id +"-post-" + lastPostId + "-comments.json");
+    }
+
+    private void getUsersPosts(int id) {
         get(uri + "/" + id + "/posts");
 
     }
-    private void get(String uri) {
-        String method = "GET";
-        methods(uri, method, HttpRequest.BodyPublishers.noBody());
-    }
-
     private List<UserPost> parseToObject() {
         Gson gson =new GsonBuilder().setPrettyPrinting().create();
 
@@ -101,7 +110,6 @@ public class MyHttpClient {
         Root root = gson.fromJson("{\"postList\": " + tmp + "}", Root.class);
         return root.getPostList();
     }
-
     private void writeInJson(String fileName) {
         try {
             Files.write(Path.of(fileName), response.body().getBytes(), StandardOpenOption.CREATE);
@@ -109,7 +117,6 @@ public class MyHttpClient {
             throw new RuntimeException(e);
         }
     }
-
     private int getLastPostId() {
         List<UserPost> postList = parseToObject();
 
@@ -121,14 +128,5 @@ public class MyHttpClient {
         return tmp;
     }
 
-    public void getLastPostComments(int id) {
-        getUsersPosts(id);
 
-        int lastPostId = getLastPostId();
-        String uri = "https://jsonplaceholder.typicode.com/posts/";
-
-        get(uri + lastPostId + "/comments");
-
-        writeInJson("src/main/resources/user-"+ id +"-post-" + lastPostId + "-comments.json");
-    }
 }
